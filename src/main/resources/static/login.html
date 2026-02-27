@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" href="data:,"/>
+<title>EduPortal — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --g1: #059669;
+    --g2: #10b981;
+    --g3: #34d399;
+    --g4: #a7f3d0;
+    --g5: #d1fae5;
+    --g6: #ecfdf5;
+    --dark: #064e3b;
+    --ink:  #0f172a;
+    --ink2: #334155;
+    --ink3: #64748b;
+    --ink4: #94a3b8;
+    --line: #e2e8f0;
+    --bg:   #f8fafc;
+    --white:#ffffff;
+    --red:  #ef4444;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── ANIMATED MESH BACKGROUND ───────────────────────── */
+  .bg-mesh {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 20%, rgba(16,185,129,.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 10% 80%, rgba(5,150,105,.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 90% 90%, rgba(52,211,153,.07) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* floating shapes */
+  .shape {
+    position: fixed;
+    pointer-events: none; z-index: 0;
+    border-radius: 50%;
+    animation: drift linear infinite;
+  }
+  .s1 { width:500px;height:500px; background:rgba(16,185,129,.06); top:-150px;right:-100px; animation-duration:20s; }
+  .s2 { width:300px;height:300px; background:rgba(5,150,105,.05);  bottom:-80px;left:-60px; animation-duration:25s; animation-direction:reverse; }
+  .s3 { width:180px;height:180px; background:rgba(52,211,153,.07); top:40%;right:10%;     animation-duration:15s; }
+  @keyframes drift {
+    0%   { transform: translate(0,0) rotate(0deg); }
+    33%  { transform: translate(20px,-15px) rotate(120deg); }
+    66%  { transform: translate(-10px,20px) rotate(240deg); }
+    100% { transform: translate(0,0) rotate(360deg); }
+  }
+
+  /* ── LAYOUT ──────────────────────────────────────────── */
+  .left {
+    flex: 1;
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    padding: 48px 64px;
+    justify-content: space-between;
+  }
+
+  .right {
+    width: 460px;
+    position: relative; z-index: 1;
+    background: var(--white);
+    border-left: 1px solid var(--line);
+    display: flex; flex-direction: column;
+    justify-content: center;
+    padding: 56px 48px;
+    box-shadow: -20px 0 60px rgba(0,0,0,.06);
+  }
+
+  /* ── LEFT BRAND ──────────────────────────────────────── */
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand-logo {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--g1), var(--g2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 6px 20px rgba(5,150,105,.35);
+  }
+  .brand-text .name { font-size: 18px; font-weight: 700; color: var(--ink); letter-spacing: -.3px; }
+  .brand-text .tag  { font-size: 11px; color: var(--g1); font-weight: 600; }
+
+  /* ── HERO TEXT ───────────────────────────────────────── */
+  .hero { margin: auto 0; }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--g6); border: 1px solid var(--g4);
+    border-radius: 100px; padding: 6px 14px;
+    font-size: 12px; font-weight: 600; color: var(--g1);
+    margin-bottom: 28px;
+  }
+  .hero-badge .dot { width: 7px; height: 7px; background: var(--g2); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.6} }
+
+  .hero h1 {
+    font-size: clamp(40px, 5vw, 62px);
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.08;
+    letter-spacing: -2.5px;
+    margin-bottom: 20px;
+  }
+  .hero h1 .em {
+    background: linear-gradient(135deg, var(--g1), var(--g3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-style: italic;
+  }
+
+  .hero p {
+    font-size: 16px;
+    color: var(--ink3);
+    line-height: 1.75;
+    max-width: 440px;
+    margin-bottom: 44px;
+  }
+
+  /* ── FEATURE PILLS ───────────────────────────────────── */
+  .features { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 48px; }
+  .feat {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 13px; font-weight: 500; color: var(--ink2);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    transition: border-color .2s, transform .2s;
+  }
+  .feat:hover { border-color: var(--g3); transform: translateY(-1px); }
+  .feat .f-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--g2); flex-shrink: 0; }
+
+  /* ── ROLE SHOWCASE ───────────────────────────────────── */
+  .role-row { display: flex; gap: 12px; }
+  .role-pill {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 16px; cursor: pointer;
+    background: var(--white);
+    transition: all .2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  }
+  .role-pill:hover { border-color: var(--g2); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(5,150,105,.12); }
+  .role-pill .rp-icon { font-size: 20px; }
+  .role-pill .rp-info .rp-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .role-pill .rp-info .rp-cred { font-size: 11px; color: var(--ink4); }
+
+  /* ── STATS ROW ───────────────────────────────────────── */
+  .stats-strip {
+    display: flex; gap: 0;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,.06);
+    margin-top: 32px;
+  }
+  .stat-item {
+    flex: 1; padding: 16px 20px;
+    border-right: 1px solid var(--line);
+    text-align: center;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-num { font-size: 26px; font-weight: 800; color: var(--g1); letter-spacing: -1px; }
+  .stat-lbl { font-size: 11px; color: var(--ink4); font-weight: 500; margin-top: 2px; }
+
+  /* ── RIGHT FORM ──────────────────────────────────────── */
+  .form-eyebrow {
+    font-size: 11px; font-weight: 700; color: var(--g1);
+    text-transform: uppercase; letter-spacing: .1em;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .form-eyebrow::before { content:''; width:24px; height:2px; background:var(--g2); border-radius:2px; }
+
+  .form-title { font-size: 30px; font-weight: 800; color: var(--ink); letter-spacing: -1px; margin-bottom: 6px; }
+  .form-sub   { font-size: 14px; color: var(--ink3); margin-bottom: 36px; }
+
+  .alert-box {
+    display: none; align-items: center; gap: 10px;
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 10px; padding: 12px 16px;
+    margin-bottom: 22px;
+    font-size: 13px; font-weight: 500; color: var(--red);
+  }
+  .alert-box.show { display: flex; animation: shake .35s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  .form-group { margin-bottom: 20px; }
+  .f-label {
+    display: flex; justify-content: space-between;
+    font-size: 13px; font-weight: 600; color: var(--ink2);
+    margin-bottom: 8px;
+  }
+
+  .input-wrap { position: relative; }
+  input {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px; font-weight: 500;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+  }
+  input:focus {
+    border-color: var(--g1);
+    background: var(--white);
+    box-shadow: 0 0 0 4px rgba(16,185,129,.1);
+  }
+  input.err { border-color: var(--red); box-shadow: 0 0 0 4px rgba(239,68,68,.07); }
+  input::placeholder { color: var(--ink4); font-weight: 400; }
+
+  .eye-btn {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--ink4); cursor: pointer; font-size: 18px;
+    transition: color .2s;
+  }
+  .eye-btn:hover { color: var(--ink); }
+
+  .f-err { font-size: 12px; color: var(--red); font-weight: 500; margin-top: 5px; display: none; }
+  .f-err.show { display: block; }
+
+  .btn-submit {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--g1) 100%);
+    border: none; border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px; font-weight: 700;
+    color: var(--white); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+    box-shadow: 0 6px 20px rgba(5,150,105,.4);
+    margin-top: 4px;
+  }
+  .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(5,150,105,.45); }
+  .btn-submit:active { transform: scale(.99); }
+  .btn-submit.loading { opacity: .75; pointer-events: none; }
+
+  .spinner {
+    display: none; width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,.3);
+    border-top-color: white; border-radius: 50%;
+    animation: spin .65s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 24px 0;
+  }
+  .divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--line); }
+  .divider span { font-size: 12px; color: var(--ink4); font-weight: 500; }
+
+  .quick-fill { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .qf-card {
+    border: 1.5px solid var(--line);
+    border-radius: 10px; padding: 12px 8px;
+    text-align: center; cursor: pointer;
+    transition: all .18s;
+  }
+  .qf-card:hover { border-color: var(--g2); background: var(--g6); transform: translateY(-2px); box-shadow: 0 4px 14px rgba(16,185,129,.12); }
+  .qf-card .qf-icon { font-size: 22px; margin-bottom: 5px; }
+  .qf-card .qf-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 3px; }
+  .qf-card.admin   .qf-role { color: var(--g1); }
+  .qf-card.teacher .qf-role { color: #7c3aed; }
+  .qf-card.student .qf-role { color: #2563eb; }
+  .qf-card .qf-cred { font-size: 11px; color: var(--ink4); font-weight: 400; }
+
+  @media (max-width: 900px) {
+    .left { display: none; }
+    .right { width: 100%; border-left: none; box-shadow: none; }
+    body { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div class="shape s1"></div>
+<div class="shape s2"></div>
+<div class="shape s3"></div>
+
+<!-- LEFT -->
+<div class="left">
+  <div class="brand">
+    <div class="brand-logo">🏫</div>
+    <div class="brand-text">
+      <div class="name">EduPortal</div>
+      <div class="tag">Academic Management System</div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-badge"><div class="dot"></div> Trusted by Schools</div>
+    <h1>Smarter schools<br>start <span class="em">here.</span></h1>
+    <p>One secure platform to manage students, teachers, courses, assignments, and grades — all in one place.</p>
+
+    <div class="features">
+      <div class="feat"><div class="f-dot"></div> JWT Authentication</div>
+      <div class="feat"><div class="f-dot"></div> Role-Based Access</div>
+      <div class="feat"><div class="f-dot"></div> Live Grade Tracking</div>
+      <div class="feat"><div class="f-dot"></div> Assignment Manager</div>
+      <div class="feat"><div class="f-dot"></div> Spring Boot Backend</div>
+      <div class="feat"><div class="f-dot"></div> MySQL Database</div>
+    </div>
+
+    <div class="role-row">
+      <div class="role-pill" onclick="fillCreds('admin','admin123')">
+        <div class="rp-icon">🛠️</div>
+        <div class="rp-info"><div class="rp-name">Admin</div><div class="rp-cred">Click to sign in</div></div>
+      </div>
+      <div class="role-pill" onclick="fillCreds('teacher1','teach123')">
+        <div class="rp-icon">👨‍🏫</div>
+        <div class="rp-info"><div class="rp-name">Teacher</div><div class="rp-cred">Click to sign in</div></div>
+      </div>
+      <div class="role-pill" onclick="fillCreds('student1','stud123')">
+        <div class="rp-icon">🎓</div>
+        <div class="rp-info"><div class="rp-name">Student</div><div class="rp-cred">Click to sign in</div></div>
+      </div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat-item"><div class="stat-num">3+</div><div class="stat-lbl">User Roles</div></div>
+      <div class="stat-item"><div class="stat-num">7+</div><div class="stat-lbl">Modules</div></div>
+      <div class="stat-item"><div class="stat-num">100%</div><div class="stat-lbl">Secure</div></div>
+      <div class="stat-item"><div class="stat-num">JWT</div><div class="stat-lbl">Token Auth</div></div>
+    </div>
+  </div>
+
+  <div style="font-size:12px;color:var(--ink4)">© 2024 EduPortal · Spring Boot + MySQL</div>
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="form-eyebrow">Secure Login</div>
+  <h2 class="form-title">Welcome back 👋</h2>
+  <p class="form-sub">Sign in to access your dashboard</p>
+
+  <div class="alert-box" id="alertBox">⚠️ <span id="alertMsg">Invalid credentials</span></div>
+
+  <div class="form-group">
+    <label class="f-label">
+      <span>Username</span>
+    </label>
+    <div class="input-wrap">
+      <input type="text" id="username" placeholder="Enter your username" autocomplete="username"/>
+    </div>
+    <div class="f-err" id="usernameErr">Please enter your username</div>
+  </div>
+
+  <div class="form-group">
+    <label class="f-label">
+      <span>Password</span>
+    </label>
+    <div class="input-wrap">
+      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"/>
+      <button class="eye-btn" type="button" onclick="togglePwd()" id="eyeBtn">👁</button>
+    </div>
+    <div class="f-err" id="passwordErr">Please enter your password</div>
+  </div>
+
+  <button class="btn-submit" id="loginBtn" onclick="handleLogin()">
+    <span id="btnText">Sign In →</span>
+    <div class="spinner" id="spinner"></div>
+  </button>
+
+  <div class="divider"><span>Quick credentials</span></div>
+
+  <div class="quick-fill">
+    <div class="qf-card admin" onclick="fillCreds('admin','admin123')">
+      <div class="qf-icon">🛠️</div>
+      <div class="qf-role">Admin</div>
+      <div class="qf-cred">admin / admin123</div>
+    </div>
+    <div class="qf-card teacher" onclick="fillCreds('teacher1','teach123')">
+      <div class="qf-icon">👨‍🏫</div>
+      <div class="qf-role">Teacher</div>
+      <div class="qf-cred">teacher1 / teach123</div>
+    </div>
+    <div class="qf-card student" onclick="fillCreds('student1','stud123')">
+      <div class="qf-icon">🎓</div>
+      <div class="qf-role">Student</div>
+      <div class="qf-cred">student1 / stud123</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080';
+
+  async function handleLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const btn      = document.getElementById('loginBtn');
+    let   valid    = true;
+
+    ['username','password'].forEach(id => {
+      document.getElementById(id).classList.remove('err');
+      document.getElementById(id+'Err').classList.remove('show');
+    });
+    document.getElementById('alertBox').classList.remove('show');
+
+    if (!username) { document.getElementById('username').classList.add('err'); document.getElementById('usernameErr').classList.add('show'); valid = false; }
+    if (!password) { document.getElementById('password').classList.add('err'); document.getElementById('passwordErr').classList.add('show'); valid = false; }
+    if (!valid) return;
+
+    btn.classList.add('loading');
+    document.getElementById('btnText').style.display = 'none';
+    document.getElementById('spinner').style.display  = 'block';
+
+    try {
+      const res  = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById('alertMsg').textContent = data.error || 'Invalid username or password';
+        const box = document.getElementById('alertBox');
+        box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
+        return;
+      }
+
+      localStorage.setItem('jwt_token', data.token);
+      localStorage.setItem('role',      data.role);
+      localStorage.setItem('username',  data.username);
+
+      const map = { ADMIN:'admin-dashboard.html', TEACHER:'teacher-dashboard.html', STUDENT:'student-dashboard.html' };
+      window.location.href = map[data.role] || 'login.html';
+
+    } catch {
+      document.getElementById('alertMsg').textContent = 'Cannot connect — is the backend running on port 8080?';
+      const box = document.getElementById('alertBox');
+      box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
+    } finally {
+      btn.classList.remove('loading');
+      document.getElementById('btnText').style.display = 'inline';
+      document.getElementById('spinner').style.display  = 'none';
+    }
+  }
+
+  function fillCreds(user, pass) {
+    document.getElementById('username').value = user;
+    document.getElementById('password').value = pass;
+    ['username','password'].forEach(id => {
+      document.getElementById(id).classList.remove('err');
+      document.getElementById(id+'Err').classList.remove('show');
+    });
+    document.getElementById('alertBox').classList.remove('show');
+  }
+
+  function togglePwd() {
+    const inp = document.getElementById('password');
+    const btn = document.getElementById('eyeBtn');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+</script>
+</body>
+</html>
+

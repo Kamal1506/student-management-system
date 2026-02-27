@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" href="data:,"/>
+<title>EduPortal — Student</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --g1:#059669;--g2:#10b981;--g3:#34d399;--g4:#a7f3d0;--g5:#d1fae5;--g6:#ecfdf5;
+    --dark:#064e3b;--ink:#0f172a;--ink2:#334155;--ink3:#64748b;--ink4:#94a3b8;
+    --line:#e2e8f0;--bg:#f8fafc;--white:#ffffff;--red:#ef4444;
+    --gold:#f59e0b;--blue:#3b82f6;--rose:#f43f5e;
+    --sidebar:240px;--radius:12px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh}
+
+  .sidebar{width:var(--sidebar);background:var(--dark);position:fixed;height:100vh;z-index:50;display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(0,0,0,.15)}
+  .sb-brand{padding:28px 20px 24px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+  .sb-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--g2),var(--g3));display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 14px rgba(16,185,129,.35)}
+  .sb-name{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.3px}
+  .sb-role-tag{margin-top:2px;font-size:9px;font-weight:600;color:var(--g3);letter-spacing:.08em;text-transform:uppercase}
+  .sb-nav{flex:1;padding:16px 12px;overflow-y:auto}
+  .sb-section{font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.12em;text-transform:uppercase;padding:0 8px;margin:16px 0 6px}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);transition:all .18s;margin-bottom:2px}
+  .sb-item:hover{background:rgba(255,255,255,.07);color:#fff}
+  .sb-item.active{background:rgba(16,185,129,.2);color:var(--g3);font-weight:600}
+  .sb-item .icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+  .sb-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.08)}
+  .user-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:10px}
+  .user-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--g1),var(--g2));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .user-name{font-size:13px;font-weight:600;color:#fff}
+  .user-sub{font-size:11px;color:rgba(255,255,255,.4)}
+  .logout-btn{margin-left:auto;background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;font-size:16px;padding:4px;transition:color .2s;flex-shrink:0}
+  .logout-btn:hover{color:var(--rose)}
+
+  .main{margin-left:var(--sidebar);flex:1;padding:32px;min-height:100vh}
+  .page-header{margin-bottom:28px}
+  .page-header h1{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-.5px;margin-bottom:4px}
+  .page-header p{font-size:14px;color:var(--ink3)}
+
+  /* ── GPA HERO CARD ─────────────────────────────────── */
+  .gpa-hero{
+    background:linear-gradient(135deg,var(--dark) 0%,var(--g1) 100%);
+    border-radius:var(--radius);padding:32px;
+    display:flex;align-items:center;gap:32px;
+    margin-bottom:24px;
+    box-shadow:0 8px 32px rgba(5,150,105,.3);
+    position:relative;overflow:hidden;
+  }
+  .gpa-hero::before{
+    content:'';position:absolute;
+    width:300px;height:300px;border-radius:50%;
+    border:1px solid rgba(255,255,255,.08);
+    top:-100px;right:-60px;
+  }
+  .gpa-hero::after{
+    content:'';position:absolute;
+    width:200px;height:200px;border-radius:50%;
+    border:1px solid rgba(255,255,255,.06);
+    top:-40px;right:40px;
+  }
+  .gpa-ring{
+    width:100px;height:100px;border-radius:50%;
+    background:conic-gradient(rgba(255,255,255,.9) 0deg, rgba(255,255,255,.15) 0deg);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;transition:background .6s;position:relative;z-index:1;
+  }
+  .gpa-inner{
+    width:74px;height:74px;border-radius:50%;
+    background:var(--dark);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .gpa-pct{font-size:20px;font-weight:800;color:#fff;line-height:1}
+  .gpa-lbl{font-size:9px;color:rgba(255,255,255,.5);margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+  .gpa-info{position:relative;z-index:1}
+  .gpa-info h2{font-size:22px;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:-.3px}
+  .gpa-info p{font-size:14px;color:rgba(255,255,255,.65);line-height:1.6}
+  .gpa-pills{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .gpa-pill{
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);
+    border-radius:100px;padding:5px 14px;
+    font-size:12px;font-weight:600;color:#fff;
+  }
+
+  /* ── STAT CARDS ─────────────────────────────────────── */
+  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+  .stat-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+  .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+  .stat-card.c-green::after{background:linear-gradient(90deg,var(--g1),var(--g2))}
+  .stat-card.c-gold::after{background:linear-gradient(90deg,var(--gold),#fbbf24)}
+  .stat-card.c-blue::after{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+  .sc-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+  .sc-icon.green{background:var(--g6)} .sc-icon.gold{background:#fffbeb} .sc-icon.blue{background:#eff6ff}
+  .sc-num{font-size:32px;font-weight:800;color:var(--ink);letter-spacing:-1px;line-height:1}
+  .sc-label{font-size:13px;color:var(--ink3);margin-top:4px;font-weight:500}
+
+  .card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
+  .card-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--line)}
+  .card-header h3{font-size:16px;font-weight:700;color:var(--ink)}
+  .card-header p{font-size:13px;color:var(--ink3);margin-top:2px}
+
+  /* ── COURSE CARDS ───────────────────────────────────── */
+  .course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:24px}
+  .course-card{
+    border:1.5px solid var(--line);border-radius:var(--radius);
+    padding:20px;transition:all .2s;
+    position:relative;overflow:hidden;
+  }
+  .course-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--g1),var(--g2))}
+  .course-card:hover{border-color:var(--g3);box-shadow:0 6px 20px rgba(16,185,129,.1);transform:translateY(-2px)}
+  .cc-code{display:inline-block;font-size:11px;font-weight:700;color:var(--g1);background:var(--g6);border:1px solid var(--g5);border-radius:6px;padding:3px 10px;margin-bottom:10px}
+  .cc-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px}
+  .cc-desc{font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px}
+  .cc-teacher{font-size:12px;color:var(--ink4)}
+
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:var(--bg)}
+  th{text-align:left;padding:12px 24px;font-size:11px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--line)}
+  td{padding:14px 24px;font-size:14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:#f9fffe}
+
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px}
+  .b-green{background:var(--g6);color:var(--g1);border:1px solid var(--g5)}
+  .b-gold{background:#fffbeb;color:var(--gold);border:1px solid #fde68a}
+  .b-blue{background:#eff6ff;color:var(--blue);border:1px solid #bfdbfe}
+  .b-rose{background:#fff1f2;color:var(--rose);border:1px solid #fecdd3}
+
+  /* ── COMPLETE BUTTON ───────────────────────────────── */
+  .btn-complete{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--g6);border:1.5px solid var(--g4);
+    border-radius:8px;padding:6px 14px;
+    font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:var(--g1);
+    cursor:pointer;transition:all .18s;
+  }
+  .btn-complete:hover{background:var(--g5);border-color:var(--g2);transform:translateY(-1px)}
+  .btn-complete:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-done{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--g6);border:1.5px solid var(--g4);
+    border-radius:8px;padding:6px 14px;
+    font-size:12px;font-weight:600;color:var(--g1);opacity:.7;
+  }
+
+  /* score bar */
+  .score-wrap{display:flex;align-items:center;gap:10px}
+  .score-bar{flex:1;height:6px;background:var(--line);border-radius:100px;overflow:hidden;min-width:60px}
+  .score-fill{height:100%;border-radius:100px;transition:width .5s}
+  .score-num{font-size:12px;font-weight:700;white-space:nowrap}
+
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+
+  .toast{position:fixed;bottom:28px;right:28px;z-index:300;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 8px 28px rgba(0,0,0,.12);transform:translateY(80px);opacity:0;transition:all .3s;min-width:260px}
+  .toast.show{transform:translateY(0);opacity:1}
+  .toast.success{border-left:3px solid var(--g1)}
+  .toast.error{border-left:3px solid var(--red)}
+
+  .empty{text-align:center;padding:52px;color:var(--ink4)}
+  .empty .e-icon{font-size:40px;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">🏫</div>
+    <div><div class="sb-name">EduPortal</div><div class="sb-role-tag">Student</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Overview</div>
+    <div class="sb-item active" onclick="goTab(this,'overview')"><span class="icon">📊</span> Dashboard</div>
+    <div class="sb-section">Academic</div>
+    <div class="sb-item" onclick="goTab(this,'courses')"><span class="icon">📚</span> My Courses</div>
+    <div class="sb-item" onclick="goTab(this,'assignments')"><span class="icon">📝</span> Assignments</div>
+    <div class="sb-item" onclick="goTab(this,'grades')"><span class="icon">🏆</span> My Grades</div>
+  </nav>
+  <div class="sb-footer">
+    <div class="user-row">
+      <div class="user-av">🎓</div>
+      <div><div class="user-name" id="sbName">Student</div><div class="user-sub">Student</div></div>
+      <button class="logout-btn" onclick="logout()">⇥</button>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="tab-content active">
+    <div class="page-header">
+      <h1>Hello, <span id="studentGreet" style="color:var(--g1)">Student</span> 👋</h1>
+      <p>Here's your academic progress at a glance.</p>
+    </div>
+
+    <div class="gpa-hero">
+      <div class="gpa-ring" id="gpaRing">
+        <div class="gpa-inner">
+          <div class="gpa-pct" id="gpaPct">—</div>
+          <div class="gpa-lbl">Avg</div>
+        </div>
+      </div>
+      <div class="gpa-info">
+        <h2>Overall Performance</h2>
+        <p id="gpaText">Your average score across all graded exams</p>
+        <div class="gpa-pills">
+          <div class="gpa-pill" id="pillCourses">📚 — Courses</div>
+          <div class="gpa-pill" id="pillPending">📝 — Pending</div>
+          <div class="gpa-pill" id="pillDone">✅ — Completed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card c-green"><div class="sc-icon green">📚</div><div class="sc-num" id="st-courses">—</div><div class="sc-label">Enrolled Courses</div></div>
+      <div class="stat-card c-gold"><div class="sc-icon gold">📝</div><div class="sc-num" id="st-pending">—</div><div class="sc-label">Pending Assignments</div></div>
+      <div class="stat-card c-blue"><div class="sc-icon blue">✅</div><div class="sc-num" id="st-done">—</div><div class="sc-label">Completed</div></div>
+    </div>
+  </div>
+
+  <!-- COURSES -->
+  <div id="tab-courses" class="tab-content">
+    <div class="page-header"><h1>My Courses</h1><p>All courses you're enrolled in</p></div>
+    <div class="card">
+      <div class="card-header"><div><h3>Enrolled Courses</h3></div></div>
+      <div class="course-grid" id="courseGrid"><p style="color:var(--ink4);padding:8px">Loading...</p></div>
+    </div>
+  </div>
+
+  <!-- ASSIGNMENTS -->
+  <div id="tab-assignments" class="tab-content">
+    <div class="page-header"><h1>Assignments</h1><p>Track and complete your tasks</p></div>
+    <div class="card">
+      <div class="card-header"><div><h3>All Assignments</h3></div></div>
+      <table>
+        <thead><tr><th>Title</th><th>Course</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="assignTbody"><tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink4)">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GRADES -->
+  <div id="tab-grades" class="tab-content">
+    <div class="page-header"><h1>My Grades</h1><p>Exam results across all courses</p></div>
+    <div class="card">
+      <div class="card-header"><div><h3>Exam Results</h3></div></div>
+      <table>
+        <thead><tr><th>Course</th><th>Marks</th><th>Grade</th><th>Score</th><th>Date</th></tr></thead>
+        <tbody id="gradesTbody"><tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink4)">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API   = 'http://localhost:8080';
+const token = localStorage.getItem('jwt_token');
+const role  = localStorage.getItem('role');
+if (!token || role !== 'STUDENT') location.href = 'login.html';
+const username = localStorage.getItem('username') || 'Student';
+document.getElementById('sbName').textContent         = username;
+document.getElementById('studentGreet').textContent   = username;
+
+const H   = () => ({'Content-Type':'application/json','Authorization':`Bearer ${token}`});
+const api = async (path,opts={}) => { const r=await fetch(API+path,{...opts,headers:H()}); if(r.status===401||r.status===403)logout(); return r; };
+
+function goTab(el,name) {
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='overview')     loadOverview();
+  if(name==='courses')      loadCourses();
+  if(name==='assignments')  loadAssignments();
+  if(name==='grades')       loadGrades();
+}
+
+async function loadOverview() {
+  try {
+    const [cr,ar,gr] = await Promise.all([api('/api/student/courses'),api('/api/student/assignments'),api('/api/student/grades')]);
+    const courses=[...await cr.json()], assignments=[...await ar.json()], grades=[...await gr.json()];
+    const pending = assignments.filter(a=>a.status==='PENDING').length;
+    const done    = assignments.filter(a=>a.status==='COMPLETED').length;
+
+    document.getElementById('st-courses').textContent = courses.length;
+    document.getElementById('st-pending').textContent = pending;
+    document.getElementById('st-done').textContent    = done;
+    document.getElementById('pillCourses').textContent = `📚 ${courses.length} Courses`;
+    document.getElementById('pillPending').textContent = `📝 ${pending} Pending`;
+    document.getElementById('pillDone').textContent   = `✅ ${done} Done`;
+
+    if (grades.length) {
+      const avg = grades.reduce((s,g)=>s+(g.marks/g.maxMarks)*100,0)/grades.length;
+      document.getElementById('gpaPct').textContent  = avg.toFixed(0)+'%';
+      document.getElementById('gpaText').textContent = `Your average across ${grades.length} exam${grades.length>1?'s':''}`;
+      const deg = (avg/100)*360;
+      document.getElementById('gpaRing').style.background =
+        `conic-gradient(rgba(255,255,255,.9) ${deg}deg, rgba(255,255,255,.15) ${deg}deg)`;
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function loadCourses() {
+  const grid=document.getElementById('courseGrid');
+  grid.innerHTML='<p style="color:var(--ink4);padding:8px">Loading...</p>';
+  const r=await api('/api/student/courses');
+  const d=await r.json();
+  grid.innerHTML = d.length ? d.map(c=>`
+    <div class="course-card">
+      <div class="cc-code">${c.code}</div>
+      <div class="cc-title">${c.title}</div>
+      <div class="cc-desc">${c.description||'No description provided.'}</div>
+      <div class="cc-teacher">👨‍🏫 ${c.teacherName||'Teacher TBD'}</div>
+    </div>`).join('') :
+    '<div class="empty" style="grid-column:1/-1"><div class="e-icon">📚</div><p>No courses enrolled yet. Contact your admin.</p></div>';
+}
+
+async function loadAssignments() {
+  const tb=document.getElementById('assignTbody');
+  tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink4)">Loading...</td></tr>';
+  const r=await api('/api/student/assignments');
+  const d=await r.json();
+  tb.innerHTML = d.length ? d.map(a=>`
+    <tr>
+      <td>
+        <strong>${a.title}</strong>
+        ${a.description?`<br><span style="font-size:12px;color:var(--ink4)">${a.description}</span>`:''}
+      </td>
+      <td style="color:var(--ink3)">${a.courseTitle||a.courseId}</td>
+      <td style="color:var(--ink3)">${a.dueDate}</td>
+      <td><span class="badge ${a.status==='COMPLETED'?'b-green':'b-rose'}">${a.status}</span></td>
+      <td>
+        ${a.status==='COMPLETED'
+          ? '<div class="btn-done">✓ Done</div>'
+          : `<button class="btn-complete" onclick="markDone(${a.id},this)">Mark Complete</button>`}
+      </td>
+    </tr>`).join('') :
+    '<tr><td colspan="5"><div class="empty"><div class="e-icon">📝</div><p>No assignments yet</p></div></td></tr>';
+}
+
+async function markDone(id, btn) {
+  btn.disabled=true; btn.textContent='...';
+  const r=await api(`/api/student/assignments/${id}/complete`,{method:'PUT'});
+  if (r?.ok) {
+    const row=btn.closest('tr');
+    row.querySelector('.badge').className='badge b-green';
+    row.querySelector('.badge').textContent='COMPLETED';
+    btn.outerHTML='<div class="btn-done">✓ Done</div>';
+    toast('Assignment completed! ✓','success');
+    loadOverview();
+  } else { btn.disabled=false; btn.textContent='Mark Complete'; toast('Failed','error'); }
+}
+
+async function loadGrades() {
+  const tb=document.getElementById('gradesTbody');
+  tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink4)">Loading...</td></tr>';
+  const r=await api('/api/student/grades');
+  const d=await r.json();
+  tb.innerHTML = d.length ? d.map(g=>{
+    const pct=((g.marks/g.maxMarks)*100).toFixed(1);
+    const color = pct>=75?'#059669':pct>=50?'#f59e0b':'#ef4444';
+    const badgeClass = pct>=75?'b-green':pct>=50?'b-gold':'b-rose';
+    return `<tr>
+      <td><strong>${g.courseTitle||g.courseId}</strong></td>
+      <td>${g.marks} / ${g.maxMarks}</td>
+      <td><span class="badge b-blue">${g.grade}</span></td>
+      <td>
+        <div class="score-wrap">
+          <div class="score-bar"><div class="score-fill" style="width:${pct}%;background:${color}"></div></div>
+          <span class="score-num" style="color:${color}">${pct}%</span>
+        </div>
+      </td>
+      <td style="color:var(--ink3)">${g.examDate}</td>
+    </tr>`;
+  }).join('') :
+    '<tr><td colspan="5"><div class="empty"><div class="e-icon">🏆</div><p>No grades yet</p></div></td></tr>';
+}
+
+function toast(msg,type='success'){const t=document.getElementById('toast');t.innerHTML=(type==='success'?'✅':'❌')+' '+msg;t.className=`toast ${type} show`;setTimeout(()=>t.classList.remove('show'),3200)}
+function logout(){localStorage.clear();location.href='login.html'}
+loadOverview();
+</script>
+</body>
+</html>
+
