@@ -3,6 +3,7 @@ package com.sms.controller;
 import com.sms.dto.EnrollmentRequest;
 import com.sms.dto.StudentDTO;
 import com.sms.dto.TeacherDTO;
+import com.sms.repository.EnrollmentRepository;
 import com.sms.service.CourseService;
 import com.sms.service.StudentService;
 import com.sms.service.TeacherService;
@@ -28,6 +29,7 @@ public class AdminController {
     private final StudentService studentService;
     private final TeacherService teacherService;
     private final CourseService courseService;
+    private final EnrollmentRepository enrollmentRepository;
 
     @GetMapping("/test")
     public ResponseEntity<String> adminTest() {
@@ -37,6 +39,17 @@ public class AdminController {
     @GetMapping("/students")
     public ResponseEntity<java.util.List<StudentDTO>> getAllStudentsForAdmin() {
         return ResponseEntity.ok(studentService.getAllStudents());
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Long>> getAdminStats() {
+        Map<String, Long> stats = Map.of(
+                "totalStudents", (long) studentService.getAllStudents().size(),
+                "totalTeachers", (long) teacherService.getAllTeachers().size(),
+                "totalCourses", (long) courseService.getAllCourses().size(),
+                "totalEnrollments", enrollmentRepository.count()
+        );
+        return ResponseEntity.ok(stats);
     }
 
     @PostMapping("/students")
@@ -57,6 +70,21 @@ public class AdminController {
     @PostMapping("/teachers")
     public ResponseEntity<TeacherDTO> createTeacher(@RequestBody TeacherDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(teacherService.createTeacher(request));
+    }
+
+    @GetMapping("/teachers")
+    public ResponseEntity<java.util.List<TeacherDTO>> getAllTeachersForAdmin() {
+        return ResponseEntity.ok(teacherService.getAllTeachers());
+    }
+
+    @PutMapping("/teachers/{id}")
+    public ResponseEntity<TeacherDTO> updateTeacher(@PathVariable Long id, @RequestBody TeacherDTO request) {
+        return ResponseEntity.ok(teacherService.updateTeacher(id, request));
+    }
+
+    @DeleteMapping("/teachers/{id}")
+    public ResponseEntity<Map<String, String>> deleteTeacher(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", teacherService.deleteTeacher(id)));
     }
 
     @PostMapping("/enroll")

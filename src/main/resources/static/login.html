@@ -150,19 +150,7 @@
   .feat .f-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--g2); flex-shrink: 0; }
 
   /* ── ROLE SHOWCASE ───────────────────────────────────── */
-  .role-row { display: flex; gap: 12px; }
-  .role-pill {
-    display: flex; align-items: center; gap: 8px;
-    border: 1px solid var(--line); border-radius: 12px;
-    padding: 10px 16px; cursor: pointer;
-    background: var(--white);
-    transition: all .2s;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
-  }
-  .role-pill:hover { border-color: var(--g2); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(5,150,105,.12); }
-  .role-pill .rp-icon { font-size: 20px; }
-  .role-pill .rp-info .rp-name { font-size: 13px; font-weight: 600; color: var(--ink); }
-  .role-pill .rp-info .rp-cred { font-size: 11px; color: var(--ink4); }
+  
 
   /* ── STATS ROW ───────────────────────────────────────── */
   .stats-strip {
@@ -194,6 +182,22 @@
 
   .form-title { font-size: 30px; font-weight: 800; color: var(--ink); letter-spacing: -1px; margin-bottom: 6px; }
   .form-sub   { font-size: 14px; color: var(--ink3); margin-bottom: 36px; }
+  .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .auth-tab {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink3);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .auth-tab.active { background: var(--g6); border-color: var(--g3); color: var(--g1); }
+  .auth-panel { display: none; }
+  .auth-panel.active { display: block; }
 
   .alert-box {
     display: none; align-items: center; gap: 10px;
@@ -203,6 +207,7 @@
     font-size: 13px; font-weight: 500; color: var(--red);
   }
   .alert-box.show { display: flex; animation: shake .35s ease; }
+  .alert-box.success { background: var(--g6); border-color: var(--g4); color: var(--g1); }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 
   .form-group { margin-bottom: 20px; }
@@ -213,7 +218,7 @@
   }
 
   .input-wrap { position: relative; }
-  input {
+  input, select {
     width: 100%;
     background: var(--bg);
     border: 1.5px solid var(--line);
@@ -225,7 +230,7 @@
     outline: none;
     transition: border-color .2s, background .2s, box-shadow .2s;
   }
-  input:focus {
+  input:focus, select:focus {
     border-color: var(--g1);
     background: var(--white);
     box-shadow: 0 0 0 4px rgba(16,185,129,.1);
@@ -289,6 +294,8 @@
   .qf-card.teacher .qf-role { color: #7c3aed; }
   .qf-card.student .qf-role { color: #2563eb; }
   .qf-card .qf-cred { font-size: 11px; color: var(--ink4); font-weight: 400; }
+  .switch-line { margin-top: 14px; font-size: 13px; color: var(--ink3); text-align: center; }
+  .switch-link { color: var(--g1); font-weight: 700; cursor: pointer; }
 
   @media (max-width: 900px) {
     .left { display: none; }
@@ -328,22 +335,7 @@
       <div class="feat"><div class="f-dot"></div> MySQL Database</div>
     </div>
 
-    <div class="role-row">
-      <div class="role-pill" onclick="fillCreds('admin','admin123')">
-        <div class="rp-icon">🛠️</div>
-        <div class="rp-info"><div class="rp-name">Admin</div><div class="rp-cred">Click to sign in</div></div>
-      </div>
-      <div class="role-pill" onclick="fillCreds('teacher1','teach123')">
-        <div class="rp-icon">👨‍🏫</div>
-        <div class="rp-info"><div class="rp-name">Teacher</div><div class="rp-cred">Click to sign in</div></div>
-      </div>
-      <div class="role-pill" onclick="fillCreds('student1','stud123')">
-        <div class="rp-icon">🎓</div>
-        <div class="rp-info"><div class="rp-name">Student</div><div class="rp-cred">Click to sign in</div></div>
-      </div>
-    </div>
-
-    <div class="stats-strip">
+<div class="stats-strip">
       <div class="stat-item"><div class="stat-num">3+</div><div class="stat-lbl">User Roles</div></div>
       <div class="stat-item"><div class="stat-num">7+</div><div class="stat-lbl">Modules</div></div>
       <div class="stat-item"><div class="stat-num">100%</div><div class="stat-lbl">Secure</div></div>
@@ -356,134 +348,289 @@
 
 <!-- RIGHT -->
 <div class="right">
-  <div class="form-eyebrow">Secure Login</div>
-  <h2 class="form-title">Welcome back 👋</h2>
-  <p class="form-sub">Sign in to access your dashboard</p>
+  <div class="form-eyebrow" id="formEyebrow">Secure Login</div>
+  <h2 class="form-title" id="formTitle">Welcome back</h2>
+  <p class="form-sub" id="formSub">Sign in to access your dashboard</p>
 
-  <div class="alert-box" id="alertBox">⚠️ <span id="alertMsg">Invalid credentials</span></div>
-
-  <div class="form-group">
-    <label class="f-label">
-      <span>Username</span>
-    </label>
-    <div class="input-wrap">
-      <input type="text" id="username" placeholder="Enter your username" autocomplete="username"/>
-    </div>
-    <div class="f-err" id="usernameErr">Please enter your username</div>
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="tabSignIn" onclick="setAuthMode('signin')">Sign In</button>
+    <button class="auth-tab" id="tabSignUp" onclick="setAuthMode('signup')">Sign Up</button>
   </div>
 
-  <div class="form-group">
-    <label class="f-label">
-      <span>Password</span>
-    </label>
-    <div class="input-wrap">
-      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"/>
-      <button class="eye-btn" type="button" onclick="togglePwd()" id="eyeBtn">👁</button>
+  <div class="auth-panel active" id="signinPanel">
+    <div class="alert-box" id="alertBox">! <span id="alertMsg">Invalid credentials</span></div>
+
+    <div class="form-group">
+      <label class="f-label"><span>Username</span></label>
+      <div class="input-wrap"><input type="text" id="username" placeholder="Enter your username" autocomplete="username"/></div>
+      <div class="f-err" id="usernameErr">Please enter your username</div>
     </div>
-    <div class="f-err" id="passwordErr">Please enter your password</div>
+
+    <div class="form-group">
+      <label class="f-label"><span>Password</span></label>
+      <div class="input-wrap">
+        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"/>
+        <button class="eye-btn" type="button" onclick="togglePwdById('password','eyeBtn')" id="eyeBtn">👁️</button>
+      </div>
+      <div class="f-err" id="passwordErr">Please enter your password</div>
+    </div>
+
+    <button class="btn-submit" id="loginBtn" onclick="handleLogin()">
+      <span id="btnText">Sign In -></span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+
+    <div class="divider"><span>Quick credentials</span></div>
+
+    <div class="quick-fill">
+      <div class="qf-card admin" onclick="fillCreds('admin','admin123')">
+        <div class="qf-icon">A</div>
+        <div class="qf-role">Admin</div>
+        <div class="qf-cred">admin / admin123</div>
+      </div>
+      <div class="qf-card teacher" onclick="fillCreds('teacher1','teach123')">
+        <div class="qf-icon">T</div>
+        <div class="qf-role">Teacher</div>
+        <div class="qf-cred">teacher1 / teach123</div>
+      </div>
+      <div class="qf-card student" onclick="fillCreds('student1','stud123')">
+        <div class="qf-icon">S</div>
+        <div class="qf-role">Student</div>
+        <div class="qf-cred">student1 / stud123</div>
+      </div>
+    </div>
+
+    <div class="switch-line">Need an account? <span class="switch-link" onclick="setAuthMode('signup')">Create one</span></div>
   </div>
 
-  <button class="btn-submit" id="loginBtn" onclick="handleLogin()">
-    <span id="btnText">Sign In →</span>
-    <div class="spinner" id="spinner"></div>
-  </button>
+  <div class="auth-panel" id="signupPanel">
+    <div class="alert-box" id="signupAlert">! <span id="signupMsg">Create a new account</span></div>
 
-  <div class="divider"><span>Quick credentials</span></div>
+    <div class="form-group">
+      <label class="f-label"><span>Username</span></label>
+      <div class="input-wrap"><input type="text" id="suUsername" placeholder="Choose a username" autocomplete="username"/></div>
+      <div class="f-err" id="suUsernameErr">Username must be 3-50 characters</div>
+    </div>
 
-  <div class="quick-fill">
-    <div class="qf-card admin" onclick="fillCreds('admin','admin123')">
-      <div class="qf-icon">🛠️</div>
-      <div class="qf-role">Admin</div>
-      <div class="qf-cred">admin / admin123</div>
+    <div class="form-group">
+      <label class="f-label"><span>Password</span></label>
+      <div class="input-wrap">
+        <input type="password" id="suPassword" placeholder="Minimum 6 characters" autocomplete="new-password"/>
+        <button class="eye-btn" type="button" onclick="togglePwdById('suPassword','suEyeBtn')" id="suEyeBtn">👁️</button>
+      </div>
+      <div class="f-err" id="suPasswordErr">Password must be at least 6 characters</div>
     </div>
-    <div class="qf-card teacher" onclick="fillCreds('teacher1','teach123')">
-      <div class="qf-icon">👨‍🏫</div>
-      <div class="qf-role">Teacher</div>
-      <div class="qf-cred">teacher1 / teach123</div>
+
+    <div class="form-group">
+      <label class="f-label"><span>Role</span></label>
+      <div class="input-wrap">
+        <select id="suRole">
+          <option value="STUDENT">Student</option>
+          <option value="TEACHER">Teacher</option>
+        </select>
+      </div>
     </div>
-    <div class="qf-card student" onclick="fillCreds('student1','stud123')">
-      <div class="qf-icon">🎓</div>
-      <div class="qf-role">Student</div>
-      <div class="qf-cred">student1 / stud123</div>
-    </div>
+
+    <button class="btn-submit" id="signupBtn" onclick="handleSignup()">
+      <span id="signupBtnText">Create Account -></span>
+      <div class="spinner" id="signupSpinner"></div>
+    </button>
+
+    <div class="switch-line">Already have an account? <span class="switch-link" onclick="setAuthMode('signin')">Sign in</span></div>
   </div>
 </div>
-
 <script>
-  const API = 'http://localhost:8080';
+  const API = window.location.origin || 'http://localhost:8080';
+  let authMode = 'signin';
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    const signIn = mode === 'signin';
+
+    document.getElementById('tabSignIn').classList.toggle('active', signIn);
+    document.getElementById('tabSignUp').classList.toggle('active', !signIn);
+    document.getElementById('signinPanel').classList.toggle('active', signIn);
+    document.getElementById('signupPanel').classList.toggle('active', !signIn);
+
+    document.getElementById('formEyebrow').textContent = signIn ? 'Secure Login' : 'Create Account';
+    document.getElementById('formTitle').textContent = signIn ? 'Welcome back' : 'Join EduPortal';
+    document.getElementById('formSub').textContent = signIn ? 'Sign in to access your dashboard' : 'Sign up to create your account';
+
+    hideAlert('alertBox');
+    hideAlert('signupAlert');
+    clearFieldErrors(['username', 'password', 'suUsername', 'suPassword']);
+  }
+
+  function clearFieldErrors(ids) {
+    ids.forEach(id => {
+      const field = document.getElementById(id);
+      const err = document.getElementById(id + 'Err');
+      if (field) field.classList.remove('err');
+      if (err) err.classList.remove('show');
+    });
+  }
+
+  function hideAlert(id) {
+    const box = document.getElementById(id);
+    if (!box) return;
+    box.classList.remove('show');
+    box.classList.remove('success');
+  }
+
+  function showAlert(id, msg, success = false) {
+    const box = document.getElementById(id);
+    if (!box) return;
+    const span = box.querySelector('span');
+    if (span) span.textContent = msg;
+    box.classList.remove('show');
+    box.classList.toggle('success', success);
+    void box.offsetWidth;
+    box.classList.add('show');
+  }
+
+  async function parseApiResponse(res) {
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    if (ct.includes('application/json')) {
+      try { return await res.json(); } catch { return {}; }
+    }
+    const text = await res.text();
+    return { message: text };
+  }
 
   async function handleLogin() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
-    const btn      = document.getElementById('loginBtn');
-    let   valid    = true;
+    const btn = document.getElementById('loginBtn');
+    let valid = true;
 
-    ['username','password'].forEach(id => {
-      document.getElementById(id).classList.remove('err');
-      document.getElementById(id+'Err').classList.remove('show');
-    });
-    document.getElementById('alertBox').classList.remove('show');
+    clearFieldErrors(['username', 'password']);
+    hideAlert('alertBox');
 
-    if (!username) { document.getElementById('username').classList.add('err'); document.getElementById('usernameErr').classList.add('show'); valid = false; }
-    if (!password) { document.getElementById('password').classList.add('err'); document.getElementById('passwordErr').classList.add('show'); valid = false; }
+    if (!username) {
+      document.getElementById('username').classList.add('err');
+      document.getElementById('usernameErr').classList.add('show');
+      valid = false;
+    }
+    if (!password) {
+      document.getElementById('password').classList.add('err');
+      document.getElementById('passwordErr').classList.add('show');
+      valid = false;
+    }
     if (!valid) return;
 
     btn.classList.add('loading');
     document.getElementById('btnText').style.display = 'none';
-    document.getElementById('spinner').style.display  = 'block';
+    document.getElementById('spinner').style.display = 'block';
 
     try {
-      const res  = await fetch(`${API}/api/auth/login`, {
+      const res = await fetch(`${API}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      const data = await res.json();
+      const data = await parseApiResponse(res);
 
       if (!res.ok) {
-        document.getElementById('alertMsg').textContent = data.error || 'Invalid username or password';
-        const box = document.getElementById('alertBox');
-        box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
+        showAlert('alertBox', data.error || 'Invalid username or password');
         return;
       }
 
       localStorage.setItem('jwt_token', data.token);
-      localStorage.setItem('role',      data.role);
-      localStorage.setItem('username',  data.username);
+      localStorage.setItem('role', data.role);
+      localStorage.setItem('username', data.username);
 
-      const map = { ADMIN:'admin-dashboard.html', TEACHER:'teacher-dashboard.html', STUDENT:'student-dashboard.html' };
+      const map = { ADMIN: 'admin-dashboard.html', TEACHER: 'teacher-dashboard.html', STUDENT: 'student-dashboard.html' };
       window.location.href = map[data.role] || 'login.html';
-
     } catch {
-      document.getElementById('alertMsg').textContent = 'Cannot connect — is the backend running on port 8080?';
-      const box = document.getElementById('alertBox');
-      box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
+      showAlert('alertBox', 'Cannot connect. Is backend running on port 8080?');
     } finally {
       btn.classList.remove('loading');
       document.getElementById('btnText').style.display = 'inline';
-      document.getElementById('spinner').style.display  = 'none';
+      document.getElementById('spinner').style.display = 'none';
+    }
+  }
+
+  async function handleSignup() {
+    const username = document.getElementById('suUsername').value.trim();
+    const password = document.getElementById('suPassword').value;
+    const role = document.getElementById('suRole').value;
+    const btn = document.getElementById('signupBtn');
+    let valid = true;
+
+    clearFieldErrors(['suUsername', 'suPassword']);
+    hideAlert('signupAlert');
+
+    if (username.length < 3 || username.length > 50) {
+      document.getElementById('suUsername').classList.add('err');
+      document.getElementById('suUsernameErr').classList.add('show');
+      valid = false;
+    }
+    if (password.length < 6) {
+      document.getElementById('suPassword').classList.add('err');
+      document.getElementById('suPasswordErr').classList.add('show');
+      valid = false;
+    }
+    if (!valid) return;
+
+    btn.classList.add('loading');
+    document.getElementById('signupBtnText').style.display = 'none';
+    document.getElementById('signupSpinner').style.display = 'block';
+
+    try {
+      const res = await fetch(`${API}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role })
+      });
+      const data = await parseApiResponse(res);
+
+      if (!res.ok) {
+        const msg = data.error || data.message || (data.fields ? Object.values(data.fields)[0] : 'Unable to create account');
+        showAlert('signupAlert', msg || 'Unable to create account');
+        return;
+      }
+
+      showAlert('signupAlert', 'Account created successfully. You can sign in now.', true);
+      document.getElementById('username').value = username;
+      document.getElementById('password').value = password;
+      setTimeout(() => {
+        setAuthMode('signin');
+        showAlert('alertBox', 'Account created. Sign in to continue.', true);
+      }, 700);
+    } catch {
+      showAlert('signupAlert', 'Cannot connect. Is backend running on port 8080?');
+    } finally {
+      btn.classList.remove('loading');
+      document.getElementById('signupBtnText').style.display = 'inline';
+      document.getElementById('signupSpinner').style.display = 'none';
     }
   }
 
   function fillCreds(user, pass) {
+    setAuthMode('signin');
     document.getElementById('username').value = user;
     document.getElementById('password').value = pass;
-    ['username','password'].forEach(id => {
-      document.getElementById(id).classList.remove('err');
-      document.getElementById(id+'Err').classList.remove('show');
-    });
-    document.getElementById('alertBox').classList.remove('show');
+    clearFieldErrors(['username', 'password']);
+    hideAlert('alertBox');
   }
 
-  function togglePwd() {
-    const inp = document.getElementById('password');
-    const btn = document.getElementById('eyeBtn');
+  function togglePwdById(inputId, btnId) {
+    const inp = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
     inp.type = inp.type === 'password' ? 'text' : 'password';
-    btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+    btn.textContent = inp.type === 'password' ? '👁️' : '🙈';
   }
 
-  document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (authMode === 'signin') handleLogin();
+    else handleSignup();
+  });
 </script>
 </body>
 </html>
+
+
+
+
 

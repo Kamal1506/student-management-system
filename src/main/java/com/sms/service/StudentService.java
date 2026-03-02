@@ -19,10 +19,14 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class StudentService {
+    private static final String GMAIL_SUFFIX = "@gmail.com";
+    private static final Pattern PHONE_10_DIGITS = Pattern.compile("^\\d{10}$");
 
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
@@ -48,6 +52,9 @@ public class StudentService {
         if (request.getUserId() == null) {
             throw new RuntimeException("userId is required");
         }
+        validateStudentContact(request);
+        String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String normalizedPhone = request.getPhone().trim();
 
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getUserId()));
@@ -60,15 +67,15 @@ public class StudentService {
             throw new RuntimeException("Student details already exist for userId: " + request.getUserId());
         }
 
-        if (studentRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Student email already exists: " + request.getEmail());
+        if (studentRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("Student email already exists: " + normalizedEmail);
         }
 
         Student saved = studentRepository.save(Student.builder()
                         .firstName(request.getFirstName())
                         .lastName(request.getLastName())
-                        .email(request.getEmail())
-                        .phone(request.getPhone())
+                        .email(normalizedEmail)
+                        .phone(normalizedPhone)
                         .user(user)
                         .build());
 
@@ -85,17 +92,19 @@ public class StudentService {
     public StudentDTO updateStudent(Long studentId, StudentDTO request) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
+        validateStudentContact(request);
+        String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String normalizedPhone = request.getPhone().trim();
 
-        if (request.getEmail() != null
-                && !request.getEmail().equalsIgnoreCase(student.getEmail())
-                && studentRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Student email already exists: " + request.getEmail());
+        if (!normalizedEmail.equalsIgnoreCase(student.getEmail())
+                && studentRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("Student email already exists: " + normalizedEmail);
         }
 
         student.setFirstName(request.getFirstName());
         student.setLastName(request.getLastName());
-        student.setEmail(request.getEmail());
-        student.setPhone(request.getPhone());
+        student.setEmail(normalizedEmail);
+        student.setPhone(normalizedPhone);
 
         Student saved = studentRepository.save(student);
 
@@ -215,5 +224,23 @@ public class StudentService {
 
         return studentRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Student profile not found for user: " + username));
+    }
+
+    private void validateStudentContact(StudentDTO request) {
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new RuntimeException("Email is required");
+        }
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        if (!email.endsWith(GMAIL_SUFFIX)) {
+            throw new RuntimeException("Email must end with @gmail.com");
+        }
+
+        if (request.getPhone() == null || request.getPhone().isBlank()) {
+            throw new RuntimeException("Phone is required");
+        }
+        String phone = request.getPhone().trim();
+        if (!PHONE_10_DIGITS.matcher(phone).matches()) {
+            throw new RuntimeException("Phone number must be exactly 10 digits");
+        }
     }
 }

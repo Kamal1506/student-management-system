@@ -379,7 +379,7 @@ document.getElementById('adminGreet').textContent = username;
 const H = () => ({'Content-Type':'application/json','Authorization':`Bearer ${token}`});
 const api = async (path, opts={}) => {
   const r = await fetch(API+path, {...opts, headers:H()});
-  if (r.status===401||r.status===403) logout();
+  if (r.status===401) logout();
   return r;
 };
 
@@ -430,6 +430,13 @@ async function loadTeachers() {
   const tb = document.getElementById('teachersTbody');
   tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink4)">Loading...</td></tr>';
   const r = await api('/api/admin/teachers');
+  if (!r?.ok) {
+    const msg = await readError(r);
+    document.getElementById('teacherCount').textContent = 'Unable to load teachers';
+    tb.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--red)">${msg}</td></tr>`;
+    toast(msg, 'error');
+    return;
+  }
   const d = await r.json();
   document.getElementById('teacherCount').textContent = `${d.length} teacher${d.length!==1?'s':''}`;
   tb.innerHTML = d.length ? d.map((t,i)=>`
@@ -439,6 +446,7 @@ async function loadTeachers() {
       <td style="color:var(--ink3)">${t.email}</td>
       <td><span class="badge b-blue">${t.subject||'—'}</span></td>
       <td><div class="action-row">
+        <div class="act-btn" onclick="editTeacher(${t.id},'${t.firstName}','${t.lastName}','${t.email}','${t.subject||''}')">✏️</div>
         <div class="act-btn del" onclick="delTeacher(${t.id})">🗑️</div>
       </div></td>
     </tr>`).join('') :
@@ -456,8 +464,9 @@ async function loadCourses() {
       <td><span class="badge b-blue">${i+1}</span></td>
       <td><strong>${c.title}</strong></td>
       <td><span class="badge b-green">${c.code}</span></td>
-      <td style="color:var(--ink3)">${c.teacherName||'—'}</td>
+      <td style="color:var(--ink3)">${c.teacherName || (c.teacherId ? `Teacher #${c.teacherId}` : '—')}</td>
       <td><div class="action-row">
+        <div class="act-btn" onclick="editCourse(${c.id},'${c.title}','${c.code}','${c.description||''}',${c.teacherId||''})">✏️</div>
         <div class="act-btn del" onclick="delCourse(${c.id})">🗑️</div>
       </div></td>
     </tr>`).join('') :
@@ -480,14 +489,46 @@ async function doEnroll() {
 }
 
 async function delStudent(id) { if(!confirm('Delete this student?')) return; const r=await api(`/api/admin/students/${id}`,{method:'DELETE'}); r?.ok?(toast('Deleted','success'),loadStudents()):toast('Failed','error'); }
-async function delTeacher(id) { if(!confirm('Delete this teacher?')) return; const r=await api(`/api/admin/teachers/${id}`,{method:'DELETE'}); r?.ok?(toast('Deleted','success'),loadTeachers()):toast('Failed','error'); }
+async function delTeacher(id) { if(!confirm('Delete this teacher?')) return; const r=await api(`/api/admin/teachers/${id}`,{method:'DELETE'}); r?.ok?(_teachersCache=null,toast('Deleted','success'),loadTeachers()):toast('Failed','error'); }
 async function delCourse(id)  { if(!confirm('Delete this course?'))  return; const r=await api(`/api/courses/${id}`,{method:'DELETE'});          r?.ok?(toast('Deleted','success'),loadCourses()):toast('Failed','error'); }
+
+let _teachersCache = null;
+async function getTeachersForSelect() {
+  if (_teachersCache) return _teachersCache;
+  const r = await api('/api/admin/teachers');
+  if (!r?.ok) throw new Error(await readError(r));
+  _teachersCache = await r.json();
+  return _teachersCache;
+}
+
+async function populateTeacherSelect(selectedTeacherId = null) {
+  const sel = document.getElementById('f4');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Loading teachers...</option>';
+  try {
+    const teachers = await getTeachersForSelect();
+    if (!teachers.length) {
+      sel.innerHTML = '<option value="">No teachers found</option>';
+      return;
+    }
+    sel.innerHTML = teachers.map(t => {
+      const label = `${t.firstName} ${t.lastName}${t.subject ? ` (${t.subject})` : ''}`;
+      const selected = String(selectedTeacherId ?? '') === String(t.id) ? ' selected' : '';
+      return `<option value="${t.id}"${selected}>${label}</option>`;
+    }).join('');
+  } catch (e) {
+    sel.innerHTML = '<option value="">Unable to load teachers</option>';
+    toast(e.message || 'Unable to load teachers', 'error');
+  }
+}
 
 let _modalType='', _editId=null;
 function openModal(type, data={}) {
   _modalType=type; _editId=data.id||null;
-  const titles = {student:'Add Student',teacher:'Add Teacher',course:'Add Course',editStudent:'Edit Student'};
+  const titles = {student:'Add Student',teacher:'Add Teacher',course:'Add Course',editStudent:'Edit Student',editTeacher:'Edit Teacher',editCourse:'Edit Course'};
   document.getElementById('modalTitle').textContent = titles[data.id?'editStudent':type]||'Add';
+  if (type==='teacher' && data.id) document.getElementById('modalTitle').textContent = titles.editTeacher;
+  if (type==='course' && data.id) document.getElementById('modalTitle').textContent = titles.editCourse;
   const forms = {
     student:`
       <div class="fg"><label>First Name</label><input id="f1" value="${data.fn||''}" placeholder="First name"/></div>
@@ -496,47 +537,119 @@ function openModal(type, data={}) {
       <div class="fg"><label>Phone</label><input id="f4" value="${data.phone||''}" placeholder="Phone number"/></div>
       ${!data.id?'<div class="fg"><label>User Account ID</label><input id="f5" type="number" placeholder="ID from users table"/></div>':''}`,
     teacher:`
-      <div class="fg"><label>First Name</label><input id="f1" placeholder="First name"/></div>
-      <div class="fg"><label>Last Name</label><input id="f2" placeholder="Last name"/></div>
-      <div class="fg"><label>Email</label><input id="f3" type="email" placeholder="email@school.com"/></div>
-      <div class="fg"><label>Subject</label><input id="f4" placeholder="e.g. Mathematics"/></div>
-      <div class="fg"><label>User Account ID</label><input id="f5" type="number" placeholder="ID from users table"/></div>`,
+      <div class="fg"><label>First Name</label><input id="f1" value="${data.fn||''}" placeholder="First name"/></div>
+      <div class="fg"><label>Last Name</label><input id="f2" value="${data.ln||''}" placeholder="Last name"/></div>
+      <div class="fg"><label>Email</label><input id="f3" type="email" value="${data.email||''}" placeholder="email@school.com"/></div>
+      <div class="fg"><label>Subject</label><input id="f4" value="${data.subject||''}" placeholder="e.g. Mathematics"/></div>
+      ${!data.id?'<div class="fg"><label>User Account ID</label><input id="f5" type="number" placeholder="ID from users table"/></div>':''}`,
     course:`
-      <div class="fg"><label>Course Title</label><input id="f1" placeholder="e.g. Advanced Mathematics"/></div>
-      <div class="fg"><label>Course Code</label><input id="f2" placeholder="e.g. MATH-401"/></div>
-      <div class="fg"><label>Description</label><input id="f3" placeholder="Short description"/></div>
-      <div class="fg"><label>Teacher ID</label><input id="f4" type="number" placeholder="Teacher profile ID"/></div>`
+      <div class="fg"><label>Course Title</label><input id="f1" value="${data.title||''}" placeholder="e.g. Advanced Mathematics"/></div>
+      <div class="fg"><label>Course Code</label><input id="f2" value="${data.code||''}" placeholder="e.g. MATH-401"/></div>
+      <div class="fg"><label>Description</label><input id="f3" value="${data.description||''}" placeholder="Short description"/></div>
+      <div class="fg"><label>Teacher</label><select id="f4"></select></div>`
   };
   document.getElementById('modalBody').innerHTML = forms[type];
   document.getElementById('overlay').classList.add('show');
   document.getElementById('modalSave').onclick = saveModal;
+  if (type==='course') populateTeacherSelect(data.teacherId);
 }
 
 function editStudent(id, fn, ln, email, phone) {
   openModal('student',{id,fn,ln,email,phone});
 }
 
+function editTeacher(id, fn, ln, email, subject) {
+  openModal('teacher',{id,fn,ln,email,subject});
+}
+
+function editCourse(id, title, code, description, teacherId) {
+  openModal('course',{id,title,code,description,teacherId});
+}
+
 async function saveModal() {
   if (_modalType==='student' && _editId) {
     const b={firstName:v('f1'),lastName:v('f2'),email:v('f3'),phone:v('f4')};
     const r=await api(`/api/admin/students/${_editId}`,{method:'PUT',body:JSON.stringify(b)});
-    r?.ok?(closeModal(),toast('Student updated!','success'),loadStudents()):toast('Failed','error');
+    if (r?.ok) {
+      closeModal(); toast('Student updated!','success'); loadStudents();
+    } else {
+      toast(await readError(r), 'error');
+    }
   } else if (_modalType==='student') {
-    const b={firstName:v('f1'),lastName:v('f2'),email:v('f3'),phone:v('f4'),userId:parseInt(v('f5'))};
+    const userId = parseInt(v('f5'), 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      toast('Enter a valid User Account ID', 'error');
+      return;
+    }
+    const b={firstName:v('f1'),lastName:v('f2'),email:v('f3'),phone:v('f4'),userId};
     const r=await api('/api/admin/students',{method:'POST',body:JSON.stringify(b)});
-    r?.ok?(closeModal(),toast('Student added!','success'),loadStudents()):toast('Failed','error');
+    if (r?.ok) {
+      closeModal(); toast('Student added!','success'); loadStudents();
+    } else {
+      toast(await readError(r), 'error');
+    }
+  } else if (_modalType==='teacher' && _editId) {
+    const b={firstName:v('f1'),lastName:v('f2'),email:v('f3'),subject:v('f4')};
+    const r=await api(`/api/admin/teachers/${_editId}`,{method:'PUT',body:JSON.stringify(b)});
+    if (r?.ok) {
+      _teachersCache = null;
+      closeModal(); toast('Teacher updated!','success'); loadTeachers();
+    } else {
+      toast(await readError(r), 'error');
+    }
   } else if (_modalType==='teacher') {
-    const b={firstName:v('f1'),lastName:v('f2'),email:v('f3'),subject:v('f4'),userId:parseInt(v('f5'))};
+    const userId = parseInt(v('f5'), 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      toast('Enter a valid User Account ID', 'error');
+      return;
+    }
+    const b={firstName:v('f1'),lastName:v('f2'),email:v('f3'),subject:v('f4'),userId};
     const r=await api('/api/admin/teachers',{method:'POST',body:JSON.stringify(b)});
-    r?.ok?(closeModal(),toast('Teacher added!','success'),loadTeachers()):toast('Failed','error');
+    if (r?.ok) {
+      _teachersCache = null;
+      closeModal(); toast('Teacher added!','success'); loadTeachers();
+    } else {
+      toast(await readError(r), 'error');
+    }
+  } else if (_modalType==='course' && _editId) {
+    const teacherId = parseInt(v('f4'), 10);
+    if (!Number.isInteger(teacherId) || teacherId <= 0) {
+      toast('Enter a valid Teacher ID', 'error');
+      return;
+    }
+    const b={title:v('f1'),code:v('f2'),description:v('f3'),teacherId};
+    const r=await api(`/api/courses/${_editId}`,{method:'PUT',body:JSON.stringify(b)});
+    if (r?.ok) {
+      closeModal(); toast('Course updated!','success'); loadCourses();
+    } else {
+      toast(await readError(r), 'error');
+    }
   } else if (_modalType==='course') {
-    const b={title:v('f1'),code:v('f2'),description:v('f3'),teacherId:parseInt(v('f4'))};
+    const teacherId = parseInt(v('f4'), 10);
+    if (!Number.isInteger(teacherId) || teacherId <= 0) {
+      toast('Enter a valid Teacher ID', 'error');
+      return;
+    }
+    const b={title:v('f1'),code:v('f2'),description:v('f3'),teacherId};
     const r=await api('/api/courses',{method:'POST',body:JSON.stringify(b)});
-    r?.ok?(closeModal(),toast('Course created!','success'),loadCourses()):toast('Failed','error');
+    if (r?.ok) {
+      closeModal(); toast('Course created!','success'); loadCourses();
+    } else {
+      toast(await readError(r), 'error');
+    }
   }
 }
 
 const v = id => document.getElementById(id)?.value||'';
+async function readError(r) {
+  if (!r) return 'Request failed';
+  try {
+    const body = await r.json();
+    if (body?.error) return body.error;
+    if (body?.message) return body.message;
+  } catch {}
+  return `Request failed (${r.status})`;
+}
 function closeModal() { document.getElementById('overlay').classList.remove('show'); }
 
 function toast(msg, type='success') {

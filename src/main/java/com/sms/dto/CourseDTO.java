@@ -15,4 +15,5 @@ public class CourseDTO {
     private String description;
     private String code;
     private Long teacherId;
+    private String teacherName;
 }

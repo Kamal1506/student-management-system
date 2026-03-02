@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,5 +54,26 @@ public class TeacherController {
             Authentication authentication
     ) {
         return ResponseEntity.ok(teacherService.getStudentsInCourse(courseId, authentication.getName()));
+    }
+
+    @GetMapping("/assignments")
+    public ResponseEntity<List<Map<String, Object>>> getMyAssignments(Authentication authentication) {
+        return ResponseEntity.ok(teacherService.getMyAssignments(authentication.getName()));
+    }
+
+    @DeleteMapping("/assignments/{assignmentId}")
+    public ResponseEntity<Map<String, String>> deleteAssignment(
+            @PathVariable Long assignmentId,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(Map.of("message", teacherService.deleteAssignment(assignmentId, authentication.getName())));
+    }
+
+    @GetMapping("/grades/{courseId}")
+    public ResponseEntity<List<Map<String, Object>>> getGradesByCourse(
+            @PathVariable Long courseId,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(teacherService.getGradesByCourse(courseId, authentication.getName()));
     }
 }

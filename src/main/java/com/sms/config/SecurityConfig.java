@@ -46,7 +46,21 @@ public class SecurityConfig {
 
                 // PUBLIC endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/", "/login.html", "/static/**").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/login.html",
+                    "/admin-dashboard.html",
+                    "/teacher-dashboard.html",
+                    "/student-dashboard.html",
+                    "/style.css",
+                    "/app.js",
+                    "/favicon.ico",
+                    "/static/**",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**"
+                ).permitAll()
 
                 // ROLE-BASED endpoints
                 .requestMatchers(HttpMethod.GET, "/api/admin/students").hasAnyRole("ADMIN", "TEACHER")

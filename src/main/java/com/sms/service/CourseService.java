@@ -34,6 +34,9 @@ public class CourseService {
                         .description(course.getDescription())
                         .code(course.getCode())
                         .teacherId(course.getTeacher() != null ? course.getTeacher().getId() : null)
+                        .teacherName(course.getTeacher() != null
+                                ? course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName()
+                                : null)
                         .build())
                 .toList();
     }
@@ -63,7 +66,52 @@ public class CourseService {
                 .description(saved.getDescription())
                 .code(saved.getCode())
                 .teacherId(saved.getTeacher() != null ? saved.getTeacher().getId() : null)
+                .teacherName(saved.getTeacher() != null
+                        ? saved.getTeacher().getFirstName() + " " + saved.getTeacher().getLastName()
+                        : null)
                 .build();
+    }
+
+    public CourseDTO updateCourse(Long courseId, CourseDTO request) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found with id: " + courseId));
+
+        if (request.getTeacherId() == null) {
+            throw new RuntimeException("teacherId is required");
+        }
+
+        if (request.getCode() != null
+                && !request.getCode().equalsIgnoreCase(course.getCode())
+                && courseRepository.existsByCode(request.getCode())) {
+            throw new RuntimeException("Course code already exists: " + request.getCode());
+        }
+
+        Teacher teacher = teacherRepository.findById(request.getTeacherId())
+                .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + request.getTeacherId()));
+
+        course.setTitle(request.getTitle());
+        course.setDescription(request.getDescription());
+        course.setCode(request.getCode());
+        course.setTeacher(teacher);
+
+        Course saved = courseRepository.save(course);
+        return CourseDTO.builder()
+                .id(saved.getId())
+                .title(saved.getTitle())
+                .description(saved.getDescription())
+                .code(saved.getCode())
+                .teacherId(saved.getTeacher() != null ? saved.getTeacher().getId() : null)
+                .teacherName(saved.getTeacher() != null
+                        ? saved.getTeacher().getFirstName() + " " + saved.getTeacher().getLastName()
+                        : null)
+                .build();
+    }
+
+    public String deleteCourse(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found with id: " + courseId));
+        courseRepository.delete(course);
+        return "Course deleted successfully";
     }
 
     public Map<String, Object> enrollStudent(Long studentId, Long courseId) {

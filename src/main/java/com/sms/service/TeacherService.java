@@ -23,10 +23,12 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
 public class TeacherService {
+    private static final String GMAIL_SUFFIX = "@gmail.com";
 
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
@@ -54,6 +56,7 @@ public class TeacherService {
         if (request.getUserId() == null) {
             throw new RuntimeException("userId is required");
         }
+        String normalizedEmail = normalizeAndValidateGmail(request.getEmail());
 
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getUserId()));
@@ -66,14 +69,14 @@ public class TeacherService {
             throw new RuntimeException("Teacher details already exist for userId: " + request.getUserId());
         }
 
-        if (teacherRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Teacher email already exists: " + request.getEmail());
+        if (teacherRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("Teacher email already exists: " + normalizedEmail);
         }
 
         Teacher saved = teacherRepository.save(Teacher.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .subject(request.getSubject())
                 .user(user)
                 .build());
@@ -88,6 +91,39 @@ public class TeacherService {
                 .build();
     }
 
+    public TeacherDTO updateTeacher(Long teacherId, TeacherDTO request) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
+
+        String normalizedEmail = normalizeAndValidateGmail(request.getEmail());
+        if (!normalizedEmail.equalsIgnoreCase(teacher.getEmail())
+                && teacherRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("Teacher email already exists: " + normalizedEmail);
+        }
+
+        teacher.setFirstName(request.getFirstName());
+        teacher.setLastName(request.getLastName());
+        teacher.setEmail(normalizedEmail);
+        teacher.setSubject(request.getSubject());
+
+        Teacher saved = teacherRepository.save(teacher);
+        return TeacherDTO.builder()
+                .id(saved.getId())
+                .firstName(saved.getFirstName())
+                .lastName(saved.getLastName())
+                .email(saved.getEmail())
+                .subject(saved.getSubject())
+                .userId(saved.getUser().getId())
+                .build();
+    }
+
+    public String deleteTeacher(Long teacherId) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
+        teacherRepository.delete(teacher);
+        return "Teacher deleted successfully";
+    }
+
     public List<Map<String, Object>> getMyAssignedCourses(String username) {
         Teacher teacher = getTeacherByUsername(username);
         return courseRepository.findByTeacherId(teacher.getId())
@@ -99,6 +135,66 @@ public class TeacherService {
                     row.put("description", course.getDescription());
                     row.put("code", course.getCode());
                     row.put("teacherId", course.getTeacher() != null ? course.getTeacher().getId() : null);
+                    row.put("studentCount", enrollmentRepository.findByCourseIdAndActiveTrue(course.getId()).size());
+                    return row;
+                })
+                .toList();
+    }
+
+    public List<Map<String, Object>> getMyAssignments(String username) {
+        Teacher teacher = getTeacherByUsername(username);
+        return assignmentRepository.findByTeacherId(teacher.getId())
+                .stream()
+                .map(assignment -> {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("id", assignment.getId());
+                    row.put("title", assignment.getTitle());
+                    row.put("description", assignment.getDescription());
+                    row.put("dueDate", assignment.getDueDate());
+                    row.put("courseId", assignment.getCourse().getId());
+                    row.put("courseTitle", assignment.getCourse().getTitle());
+                    row.put("status", assignment.getStatus().name());
+                    return row;
+                })
+                .toList();
+    }
+
+    public String deleteAssignment(Long assignmentId, String username) {
+        Teacher teacher = getTeacherByUsername(username);
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Assignment not found with id: " + assignmentId));
+
+        if (assignment.getTeacher() == null || !assignment.getTeacher().getId().equals(teacher.getId())) {
+            throw new RuntimeException("You can only delete your own assignments");
+        }
+
+        assignmentRepository.delete(assignment);
+        return "Assignment deleted successfully";
+    }
+
+    public List<Map<String, Object>> getGradesByCourse(Long courseId, String username) {
+        Teacher teacher = getTeacherByUsername(username);
+
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found with id: " + courseId));
+
+        if (course.getTeacher() == null || !course.getTeacher().getId().equals(teacher.getId())) {
+            throw new RuntimeException("You can only view grades for your own courses");
+        }
+
+        return examResultRepository.findByCourseId(courseId)
+                .stream()
+                .map(result -> {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("id", result.getId());
+                    row.put("studentId", result.getStudent().getId());
+                    row.put("studentName", result.getStudent().getFirstName() + " " + result.getStudent().getLastName());
+                    row.put("courseId", result.getCourse().getId());
+                    row.put("marks", result.getMarks());
+                    row.put("maxMarks", result.getMaxMarks());
+                    row.put("grade", result.getGrade());
+                    row.put("examDate", result.getExamDate());
+                    row.put("percentage", result.getPercentage());
                     return row;
                 })
                 .toList();
@@ -212,5 +308,16 @@ public class TeacherService {
 
         return teacherRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Teacher profile not found for user: " + username));
+    }
+
+    private String normalizeAndValidateGmail(String rawEmail) {
+        if (rawEmail == null || rawEmail.isBlank()) {
+            throw new RuntimeException("Email is required");
+        }
+        String email = rawEmail.trim().toLowerCase(Locale.ROOT);
+        if (!email.endsWith(GMAIL_SUFFIX)) {
+            throw new RuntimeException("Email must end with @gmail.com");
+        }
+        return email;
     }
 }

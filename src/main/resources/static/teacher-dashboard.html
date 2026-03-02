@@ -194,8 +194,16 @@
     <div class="card">
       <div class="card-header"><div><h3>Submit a Grade</h3><p>Fill in the exam result below</p></div></div>
       <div class="form-2col">
-        <div class="fg"><label>Student ID</label><input id="gSId" type="number" placeholder="Student profile ID"/></div>
-        <div class="fg"><label>Course ID</label><input id="gCId" type="number" placeholder="Course ID"/></div>
+        <div class="fg">
+          <label>Student</label>
+          <input id="gStudentSearch" list="gStudentList" placeholder="Type student name or email"/>
+          <datalist id="gStudentList"></datalist>
+        </div>
+        <div class="fg">
+          <label>Course</label>
+          <input id="gCourseSearch" list="gCourseList" placeholder="Type course name or code"/>
+          <datalist id="gCourseList"></datalist>
+        </div>
         <div class="fg"><label>Marks Obtained</label><input id="gMarks" type="number" placeholder="e.g. 85"/></div>
         <div class="fg"><label>Max Marks</label><input id="gMax" type="number" placeholder="e.g. 100"/></div>
         <div class="fg"><label>Grade</label><input id="gGrade" placeholder="e.g. A, B+, C"/></div>
@@ -208,13 +216,16 @@
       <div class="card-header">
         <div><h3>View Grades by Course</h3></div>
         <div style="display:flex;gap:10px;align-items:center">
-          <div class="fg" style="margin:0;min-width:140px"><input id="viewCId" type="number" placeholder="Course ID"/></div>
+          <div class="fg" style="margin:0;min-width:280px">
+            <input id="viewCourseSearch" list="viewCourseList" placeholder="Type course name or code"/>
+            <datalist id="viewCourseList"></datalist>
+          </div>
           <button class="btn btn-green" onclick="loadGrades()">View →</button>
         </div>
       </div>
       <table>
         <thead><tr><th>Student</th><th>Marks</th><th>Max</th><th>Grade</th><th>Score</th><th>Date</th></tr></thead>
-        <tbody id="gradesTbody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink4)">Enter a Course ID above</td></tr></tbody>
+        <tbody id="gradesTbody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink4)">Choose a course above</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -252,6 +263,12 @@ document.getElementById('teacherGreet').textContent = username;
 
 const H   = () => ({'Content-Type':'application/json','Authorization':`Bearer ${token}`});
 const api = async (path,opts={}) => { const r=await fetch(API+path,{...opts,headers:H()}); if(r.status===401||r.status===403)logout(); return r; };
+let teacherCourses = [];
+let courseLabelToId = new Map();
+let studentsByCourse = new Map();
+let studentLabelToId = new Map();
+let selectedGradeCourseId = null;
+let selectedGradeStudentId = null;
 
 function goTab(el,name) {
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
@@ -261,6 +278,7 @@ function goTab(el,name) {
   if(name==='overview')     loadOverview();
   if(name==='courses')      loadCourses();
   if(name==='assignments')  loadAssignments();
+  if(name==='grades')       initGradeLookups();
 }
 
 async function loadOverview() {
@@ -321,13 +339,28 @@ async function saveAssignment() {
 }
 
 async function submitGrade() {
-  const b={studentId:parseInt(v('gSId')),courseId:parseInt(v('gCId')),marks:parseFloat(v('gMarks')),maxMarks:parseFloat(v('gMax')),grade:v('gGrade'),examDate:v('gDate')};
+  if (!selectedGradeCourseId) {
+    toast('Choose a valid course from the list','error');
+    return;
+  }
+  if (!selectedGradeStudentId) {
+    toast('Choose a valid student from the list','error');
+    return;
+  }
+  const b={
+    studentId:selectedGradeStudentId,
+    courseId:selectedGradeCourseId,
+    marks:parseFloat(v('gMarks')),
+    maxMarks:parseFloat(v('gMax')),
+    grade:v('gGrade'),
+    examDate:v('gDate')
+  };
   const r=await api('/api/teacher/grades',{method:'POST',body:JSON.stringify(b)});
   r?.ok?toast('Grade submitted!','success'):toast('Failed to submit grade','error');
 }
 
 async function loadGrades() {
-  const id=v('viewCId');
+  const id = resolveCourseId(v('viewCourseSearch'));
   if(!id) return;
   const tb=document.getElementById('gradesTbody');
   tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--ink4)">Loading...</td></tr>';
@@ -346,9 +379,92 @@ async function loadGrades() {
 }
 
 const v=id=>document.getElementById(id)?.value||'';
+const norm = s => (s||'').trim().toLowerCase();
+const courseLabel = c => `${c.title} (${c.code})`;
+const studentLabel = s => `${s.firstName} ${s.lastName} (${s.email})`;
+
+function resolveCourseId(input) {
+  if (!input) return null;
+  const byLabel = courseLabelToId.get(norm(input));
+  if (byLabel) return byLabel;
+  if (/^\d+$/.test(input.trim())) return parseInt(input.trim(), 10);
+  return null;
+}
+
+function resolveStudentId(input) {
+  if (!input) return null;
+  const byLabel = studentLabelToId.get(norm(input));
+  if (byLabel) return byLabel;
+  if (/^\d+$/.test(input.trim())) return parseInt(input.trim(), 10);
+  return null;
+}
+
+function renderCourseLists() {
+  const gradeList = document.getElementById('gCourseList');
+  const viewList = document.getElementById('viewCourseList');
+  const options = teacherCourses.map(c => `<option value="${courseLabel(c)}"></option>`).join('');
+  gradeList.innerHTML = options;
+  viewList.innerHTML = options;
+}
+
+function renderStudentList(courseId) {
+  const students = studentsByCourse.get(courseId) || [];
+  document.getElementById('gStudentList').innerHTML =
+    students.map(s => `<option value="${studentLabel(s)}"></option>`).join('');
+}
+
+async function loadStudentsForCourse(courseId) {
+  if (studentsByCourse.has(courseId)) return;
+  const r = await api(`/api/teacher/courses/${courseId}/students`);
+  const students = await r.json();
+  studentsByCourse.set(courseId, students);
+}
+
+async function onGradeCourseInput() {
+  const id = resolveCourseId(v('gCourseSearch'));
+  selectedGradeCourseId = id;
+  selectedGradeStudentId = null;
+  document.getElementById('gStudentSearch').value = '';
+  studentLabelToId = new Map();
+
+  if (!id) {
+    document.getElementById('gStudentList').innerHTML = '';
+    return;
+  }
+
+  await loadStudentsForCourse(id);
+  const students = studentsByCourse.get(id) || [];
+  students.forEach(s => studentLabelToId.set(norm(studentLabel(s)), s.id));
+  renderStudentList(id);
+}
+
+function onGradeStudentInput() {
+  selectedGradeStudentId = resolveStudentId(v('gStudentSearch'));
+}
+
+async function initGradeLookups() {
+  if (!teacherCourses.length) {
+    const r = await api('/api/teacher/courses');
+    teacherCourses = await r.json();
+    courseLabelToId = new Map();
+    teacherCourses.forEach(c => courseLabelToId.set(norm(courseLabel(c)), c.id));
+    renderCourseLists();
+  }
+
+  const courseInput = document.getElementById('gCourseSearch');
+  const studentInput = document.getElementById('gStudentSearch');
+  if (!courseInput.dataset.bound) {
+    courseInput.addEventListener('input', onGradeCourseInput);
+    courseInput.addEventListener('change', onGradeCourseInput);
+    studentInput.addEventListener('input', onGradeStudentInput);
+    studentInput.addEventListener('change', onGradeStudentInput);
+    courseInput.dataset.bound = '1';
+  }
+}
 function toast(msg,type='success'){const t=document.getElementById('toast');t.innerHTML=(type==='success'?'✅':'❌')+' '+msg;t.className=`toast ${type} show`;setTimeout(()=>t.classList.remove('show'),3200)}
 function logout(){localStorage.clear();location.href='login.html'}
 loadOverview();
+initGradeLookups();
 </script>
 </body>
 </html>
