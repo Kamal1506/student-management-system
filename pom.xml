@@ -76,6 +76,31 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- ─────────────────────────────────────────────────────────────────
+     ADD THESE DEPENDENCIES TO YOUR EXISTING pom.xml
+     Inside the <dependencies> block
+     ───────────────────────────────────────────────────────────────── -->
+
+<!-- ── PDF Generation (iText 7) ─────────────────────────────────── -->
+<dependency>
+    <groupId>com.itextpdf</groupId>
+    <artifactId>itext7-core</artifactId>
+    <version>7.2.5</version>
+    <type>pom</type>
+</dependency>
+
+<!-- ── Email (Spring Mail) ──────────────────────────────────────── -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+
+<!-- ── Thymeleaf (for HTML email templates) ─────────────────────── -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-thymeleaf</artifactId>
+</dependency>
+
         <!-- JWT (if you are using jjwt) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

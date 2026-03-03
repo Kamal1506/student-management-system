@@ -3,11 +3,9 @@ package com.sms.service;
 import com.sms.dto.CourseDTO;
 import com.sms.model.Enrollment;
 import com.sms.model.Course;
-import com.sms.model.Student;
 import com.sms.model.Teacher;
 import com.sms.repository.CourseRepository;
 import com.sms.repository.EnrollmentRepository;
-import com.sms.repository.StudentRepository;
 import com.sms.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +20,8 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final TeacherRepository teacherRepository;
-    private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final EnrollmentService enrollmentService;
 
     public List<CourseDTO> getAllCourses() {
         return courseRepository.findAll()
@@ -115,21 +113,7 @@ public class CourseService {
     }
 
     public Map<String, Object> enrollStudent(Long studentId, Long courseId) {
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
-
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Course not found with id: " + courseId));
-
-        if (enrollmentRepository.existsByStudentIdAndCourseId(studentId, courseId)) {
-            throw new RuntimeException("Student is already enrolled in this course");
-        }
-
-        Enrollment saved = enrollmentRepository.save(Enrollment.builder()
-                .student(student)
-                .course(course)
-                .active(true)
-                .build());
+        Enrollment saved = enrollmentService.enroll(studentId, courseId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("id", saved.getId());

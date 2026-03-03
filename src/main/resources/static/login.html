@@ -32,8 +32,28 @@
     min-height: 100vh;
     background: var(--bg);
     display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
     position: relative;
+    overflow: auto;
+  }
+
+  .auth-shell {
+    position: relative;
+    z-index: 1;
+    width: min(1140px, 100%);
+    min-height: 680px;
+    display: grid;
+    grid-template-columns: 1.15fr .85fr;
+    border: 1px solid rgba(226, 232, 240, .9);
+    border-radius: 24px;
     overflow: hidden;
+    background: rgba(255, 255, 255, .86);
+    backdrop-filter: blur(8px);
+    box-shadow:
+      0 30px 70px rgba(15, 23, 42, .12),
+      0 10px 24px rgba(15, 23, 42, .08);
   }
 
   /* ── ANIMATED MESH BACKGROUND ───────────────────────── */
@@ -65,21 +85,20 @@
 
   /* ── LAYOUT ──────────────────────────────────────────── */
   .left {
-    flex: 1;
     position: relative; z-index: 1;
     display: flex; flex-direction: column;
     padding: 48px 64px;
     justify-content: space-between;
+    background: linear-gradient(155deg, #f0fdf4 0%, #ffffff 48%, #ecfdf5 100%);
   }
 
   .right {
-    width: 460px;
     position: relative; z-index: 1;
-    background: var(--white);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     border-left: 1px solid var(--line);
     display: flex; flex-direction: column;
     justify-content: center;
-    padding: 56px 48px;
+    padding: 48px 44px;
     box-shadow: -20px 0 60px rgba(0,0,0,.06);
   }
 
@@ -181,11 +200,18 @@
   .form-eyebrow::before { content:''; width:24px; height:2px; background:var(--g2); border-radius:2px; }
 
   .form-title { font-size: 30px; font-weight: 800; color: var(--ink); letter-spacing: -1px; margin-bottom: 6px; }
-  .form-sub   { font-size: 14px; color: var(--ink3); margin-bottom: 36px; }
-  .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-  .auth-tab {
+  .form-sub   { font-size: 14px; color: var(--ink3); margin-bottom: 28px; }
+  .auth-tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-bottom: 20px;
+    padding: 6px;
+    border-radius: 12px;
     border: 1px solid var(--line);
-    background: var(--bg);
+    background: #f1f5f9;
+  }
+  .auth-tab {
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--ink3);
     border-radius: 10px;
     padding: 10px 12px;
@@ -195,9 +221,9 @@
     cursor: pointer;
     transition: all .2s;
   }
-  .auth-tab.active { background: var(--g6); border-color: var(--g3); color: var(--g1); }
+  .auth-tab.active { background: var(--white); border-color: #cbd5e1; color: var(--g1); box-shadow: 0 3px 10px rgba(15,23,42,.08); }
   .auth-panel { display: none; }
-  .auth-panel.active { display: block; }
+  .auth-panel.active { display: flex; flex-direction: column; }
 
   .alert-box {
     display: none; align-items: center; gap: 10px;
@@ -280,7 +306,7 @@
   .divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--line); }
   .divider span { font-size: 12px; color: var(--ink4); font-weight: 500; }
 
-  .quick-fill { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .quick-fill { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 4px; }
   .qf-card {
     border: 1.5px solid var(--line);
     border-radius: 10px; padding: 12px 8px;
@@ -298,9 +324,15 @@
   .switch-link { color: var(--g1); font-weight: 700; cursor: pointer; }
 
   @media (max-width: 900px) {
+    body { padding: 14px; }
+    .auth-shell {
+      width: min(520px, 100%);
+      min-height: unset;
+      display: block;
+      border-radius: 20px;
+    }
     .left { display: none; }
-    .right { width: 100%; border-left: none; box-shadow: none; }
-    body { justify-content: center; }
+    .right { width: 100%; border-left: none; box-shadow: none; padding: 32px 22px; }
   }
 </style>
 </head>
@@ -311,6 +343,7 @@
 <div class="shape s2"></div>
 <div class="shape s3"></div>
 
+<div class="auth-shell">
 <!-- LEFT -->
 <div class="left">
   <div class="brand">
@@ -436,8 +469,9 @@
       <div class="spinner" id="signupSpinner"></div>
     </button>
 
-    <div class="switch-line">Already have an account? <span class="switch-link" onclick="setAuthMode('signin')">Sign in</span></div>
+  <div class="switch-line">Already have an account? <span class="switch-link" onclick="setAuthMode('signin')">Sign in</span></div>
   </div>
+</div>
 </div>
 <script>
   const API = window.location.origin || 'http://localhost:8080';
